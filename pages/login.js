@@ -1,38 +1,48 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'
+import { supabase } from '../lib/supabase'
 
-export default function Login() {
-  const router = useRouter()
+export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState('')
+  const router = useRouter()
 
+  // Redirect if already logged in
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) router.push('/')
+      if (data?.user) {
+        router.push('/')
+      }
     })
   }, [])
 
-  async function handleLogin(e) {
+  const handleLogin = async (e) => {
     e.preventDefault()
-    setErrorMsg('')
     setLoading(true)
 
-    const { error: loginError } = await supabase.auth.signInWithPassword({ email, password })
+    // Attempt to log in first
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
     if (loginError) {
-      setErrorMsg('Login failed: ' + loginError.message)
+      console.log('Login failed:', loginError.message)
 
-      const { error: signUpError } = await supabase.auth.signUp({ email, password })
+      // Try to sign up if login failed
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+      })
 
       if (signUpError) {
-        setErrorMsg('Signup failed: ' + signUpError.message)
+        alert('Signup failed: ' + signUpError.message)
       } else {
-        setErrorMsg('Signup successful! Now try logging in again.')
+        alert('Signup successful! Now try logging in again.')
       }
     } else {
+      // Logged in successfully
       router.push('/')
     }
 
@@ -42,34 +52,27 @@ export default function Login() {
   return (
     <div style={{ padding: 20 }}>
       <h2>🔐 Login or Sign Up</h2>
-
       <form onSubmit={handleLogin}>
         <input
           type="email"
           placeholder="Email"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value)}
           required
-          style={{ display: 'block', marginBottom: 10 }}
+          style={{ display: 'block', marginBottom: 10, width: '100%' }}
         />
         <input
           type="password"
           placeholder="Password"
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={(e) => setPassword(e.target.value)}
           required
-          style={{ display: 'block', marginBottom: 10 }}
+          style={{ display: 'block', marginBottom: 10, width: '100%' }}
         />
-        <button type="submit" disabled={loading} style={{ backgroundColor: 'green', color: 'white', padding: 10 }}>
+        <button type="submit" disabled={loading} style={{ padding: 10 }}>
           {loading ? 'Processing...' : 'Login / Sign Up'}
         </button>
       </form>
-
-      {errorMsg && (
-        <div style={{ marginTop: 20, color: 'red' }}>
-          <strong>{errorMsg}</strong>
-        </div>
-      )}
     </div>
   )
 }
