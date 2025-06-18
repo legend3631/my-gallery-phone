@@ -1,61 +1,31 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { useRouter } from 'next/router'
+async function handleLogin(e) {
+  e.preventDefault()
+  setLoading(true)
 
-export default function Login() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
+  const { error, data } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  })
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) router.push('/')
+  if (error) {
+    console.error('Login error:', error.message)
+    alert('Login failed: ' + error.message)
+
+    // Try signing up
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password
     })
-  }, [])
 
-  async function handleLogin(e) {
-    e.preventDefault()
-    setLoading(true)
-
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (error) {
-      alert('Login failed. Trying to sign up...')
-      const { error: signUpError } = await supabase.auth.signUp({ email, password })
-      if (signUpError) alert(signUpError.message)
-      else alert('Signed up! Now try logging in again.')
+    if (signUpError) {
+      console.error('Signup error:', signUpError.message)
+      alert('Signup failed: ' + signUpError.message)
     } else {
-      router.push('/')
+      alert('Signup successful! Now try logging in again.')
     }
-
-    setLoading(false)
+  } else {
+    router.push('/')
   }
 
-  return (
-    <div style={{ padding: 20 }}>
-      <h2>🔐 Login or Sign Up</h2>
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-          style={{ display: 'block', marginBottom: 10 }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-          style={{ display: 'block', marginBottom: 10 }}
-        />
-        <button type="submit" disabled={loading}>
-          {loading ? 'Processing...' : 'Login / Sign Up'}
-        </button>
-      </form>
-    </div>
-  )
+  setLoading(false)
 }
