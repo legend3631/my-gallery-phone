@@ -7,6 +7,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -16,30 +17,20 @@ export default function Login() {
 
   async function handleLogin(e) {
     e.preventDefault()
+    setErrorMsg('')
     setLoading(true)
 
-    const { error, data } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
+    const { error: loginError } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (error) {
-      console.error('Login failed:', error.message)
-      alert('Login failed. Trying to sign up...')
+    if (loginError) {
+      setErrorMsg('Login failed: ' + loginError.message)
 
-      // Try signing up
-      const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
-        email,
-        password
-      })
-
-      console.log('Signup response:', signUpData)
+      const { error: signUpError } = await supabase.auth.signUp({ email, password })
 
       if (signUpError) {
-        console.error('Signup failed:', signUpError)
-        alert('Signup failed. Check browser console for full error.')
+        setErrorMsg('Signup failed: ' + signUpError.message)
       } else {
-        alert('Signup successful! Now try logging in again.')
+        setErrorMsg('Signup successful! Now try logging in again.')
       }
     } else {
       router.push('/')
@@ -51,6 +42,7 @@ export default function Login() {
   return (
     <div style={{ padding: 20 }}>
       <h2>🔐 Login or Sign Up</h2>
+
       <form onSubmit={handleLogin}>
         <input
           type="email"
@@ -68,10 +60,16 @@ export default function Login() {
           required
           style={{ display: 'block', marginBottom: 10 }}
         />
-        <button type="submit" disabled={loading}>
+        <button type="submit" disabled={loading} style={{ backgroundColor: 'green', color: 'white', padding: 10 }}>
           {loading ? 'Processing...' : 'Login / Sign Up'}
         </button>
       </form>
+
+      {errorMsg && (
+        <div style={{ marginTop: 20, color: 'red' }}>
+          <strong>{errorMsg}</strong>
+        </div>
+      )}
     </div>
   )
 }
