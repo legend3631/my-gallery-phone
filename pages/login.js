@@ -9,12 +9,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    // Only run this code on the client (browser)
-    if (typeof window !== 'undefined') {
-      supabase.auth.getUser().then(({ data }) => {
-        if (data.user) router.push('/')
-      })
-    }
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) router.push('/')
+    })
   }, [])
 
   async function handleLogin(e) {
