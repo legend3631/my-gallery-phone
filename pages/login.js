@@ -18,8 +18,8 @@ async function handleLogin(e) {
     })
 
     if (signUpError) {
-      console.error('Signup error:', signUpError.message)
-      alert('Signup failed: ' + signUpError.message)
+      console.error('Signup error:', signUpError)
+      alert('Signup failed: ' + JSON.stringify(signUpError))
     } else {
       alert('Signup successful! Now try logging in again.')
     }
